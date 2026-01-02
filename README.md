@@ -1,286 +1,270 @@
-MAVLink-Based Dual-Link Medium Switching for Reliable UAV Communication
-Overview
+# MAVLink-Based Dual-Link Medium Switching for Reliable UAV Communication
 
-This repository presents a Proof of Concept (PoC) for a reliable UAV communication framework designed for Search and Rescue (SAR) and disaster-response scenarios where conventional communication infrastructure is unavailable or unreliable.
+## Overview
 
-The PoC implements dynamic medium switching between Wi-Fi and LoRa for MAVLink-based UAV communication using an application-layer Interface Manager running on a companion computer.
-The objective is to ensure continuous command-and-control (C2) and telemetry delivery, even under link degradation or failure.
+This repository presents a **Proof of Concept (PoC)** for a **reliable UAV communication framework** designed for **Search and Rescue (SAR)** and **disaster-response** scenarios where conventional communication infrastructure is unavailable, congested, or unreliable.
 
-Problem Statement
+The PoC implements **dynamic medium switching between Wi-Fi and LoRa** for **MAVLink-based UAV communication** using an **application-layer Interface Manager** running on a **companion computer**.
 
-UAVs deployed in heacy crowd zones face severe communication challenges:
+The primary objective is to ensure **continuous command-and-control (C2)** and **telemetry delivery**, even under **link degradation or failure**.
 
-Cellular and internet infrastructure is often too busy
+---
 
-Single-link communication systems fail due to:
+## Problem Statement
 
-Limited range (Wi-Fi)
+UAVs deployed in **heavily crowded or disaster-affected zones** face severe communication challenges:
 
-Low data rate (LoRa)
+- Cellular and internet infrastructure is often **overloaded or unstable**
+- **Single-link communication systems** fail due to:
+  - Limited range (Wi-Fi)
+  - Low data rate (LoRa)
+- Loss of control or telemetry can result in:
+  - Mission failure
+  - Safety hazards
 
-Loss of control or telemetry can cause mission failure or safety hazards
+Most UAV systems rely on **a single communication medium**, making them vulnerable to **single-point failures**.
 
-Most UAV systems rely on one communication medium, making them vulnerable to single-point failures.
+---
 
-Proposed Solution :-
+## Proposed Solution
 
-This PoC implements a heterogeneous dual-link communication architecture using:
+This PoC implements a **heterogeneous dual-link communication architecture** using:
 
-MAVLink as the communication protocol
+- **MAVLink** as the communication protocol
+- **Wi-Fi** for high-throughput, short-range data transfer
+- **LoRa** for long-range, robust, low-bandwidth communication
 
-Wi-Fi for high-throughput, short-range data
+An **Interface Manager (IM)** dynamically selects the optimal medium based on **real-time link quality metrics** and ensures **redundancy for critical messages**.
 
-LoRa for long-range, robust low-bandwidth communication
+---
 
-An Interface Manager (IM) dynamically selects the optimal medium based on real-time link quality metrics and ensures redundancy for critical messages.
+## System Architecture
 
-System Architecture :-
+### Key Components
 
-Key Components :-
+#### 1. Flight Controller (FC)
+- Runs the autopilot stack
+- Produces and consumes MAVLink messages
+- Connected to the companion computer via a serial interface
 
-Flight Controller (FC)
+#### 2. Companion Computer (CC)
+- Runs Linux (Raspberry Pi / Jetson)
+- Hosts the Interface Manager
+- Routes MAVLink messages over Wi-Fi and/or LoRa
 
-Runs the autopilot stack
+#### 3. Dual Communication Interfaces
 
-Produces and consumes MAVLink messages
+- **Wi-Fi (IEEE 802.11n)**
+  - High throughput
+  - Low latency
+  - Limited range
 
-Connected to companion computer via serial interface
+- **LoRa (ISM Band)**
+  - Long range
+  - Low data rate
+  - High robustness
 
-Companion Computer (CC)
+#### 4. Ground Control Station (GCS)
+- Receives MAVLink messages
+- Performs packet deduplication
+- Displays telemetry and accepts command input
 
-Runs Linux (Raspberry Pi / Jetson)
+---
 
-Hosts the Interface Manager
+## Why MAVLink + Dual Links?
 
-Routes MAVLink messages over Wi-Fi and/or LoRa
+- **MAVLink** defines how UAV data is:
+  - Structured
+  - Sequenced
+  - Verified
+- **Wi-Fi and LoRa** define how data is **physically transmitted**
+- MAVLink alone **does not guarantee delivery**
+- **Dual-link redundancy** ensures reliability under unpredictable conditions
 
-Dual Communication Interfaces
+---
 
-Wi-Fi (IEEE 802.11n)
-High throughput, low latency, limited range
+## Medium Switching Concept
 
-LoRa (ISM band)
-Long range, low data rate, high robustness
+The core contribution of this PoC is **application-layer medium switching**.
 
-Ground Control Station (GCS)
+Instead of relying on network-level failover, the system makes **message-aware decisions** based on **real-time link conditions**.
 
-Receives MAVLink messages
+---
 
-Performs deduplication
+## Interface Manager (IM)
 
-Displays telemetry and allows command input
+The **Interface Manager** is the central logic unit of the PoC.
 
-- Why MAVLink + Dual Links?
+### Responsibilities
+- Monitor link quality metrics
+- Decide which medium to use for each message
+- Duplicate critical messages across both links
+- Trigger failover without message loss
 
-MAVLink defines how UAV data is structured, sequenced, and verified
+---
 
-Wi-Fi and LoRa define how data is physically transmitted
+## Link Quality Metrics Used
 
-MAVLink alone does not guarantee delivery
+The IM continuously monitors the following metrics:
 
-Dual-link redundancy ensures reliability under unpredictable conditions
+| Metric | Description |
+|------|------------|
+| RSSI | Signal strength of the interface |
+| Packet Loss Rate | Derived from MAVLink sequence numbers |
+| HEARTBEAT Timeout | Missed MAVLink HEARTBEAT messages |
+| Throughput | Estimated data transmission rate |
 
-Medium Switching Concept :-
+---
 
-The core contribution of this PoC is application-layer medium switching.
+## Switching Logic
 
-Instead of relying on network-level failover, the system makes message-aware decisions based on real-time link conditions.
+- **Under normal conditions:**
+  - Wi-Fi is preferred for telemetry and high-data traffic
 
-Interface Manager (IM) :-
+- **When Wi-Fi quality degrades:**
+  - Packet loss increases
+  - HEARTBEAT messages are missed
+  - RSSI drops below threshold  
+  → IM switches primary transmission to **LoRa**
 
-The Interface Manager is the central logic unit of the PoC.
+- **When Wi-Fi recovers:**
+  - IM dynamically reverts to Wi-Fi
 
-Responsibilities
+Switching is **automatic, adaptive, and continuous**.
 
-Monitor link quality metrics
+---
 
-Decide which medium to use for each message
+## Message Priority and Redundancy
 
-Duplicate critical messages across both links
+### Message Classification
 
-Trigger failover without message loss
+#### Critical Messages
+- Command-and-control (C2) commands
+- HEARTBEAT
+- Position and health telemetry
 
-Link Quality Metrics Used
+#### Non-Critical Messages
+- Logs
+- High-rate telemetry
+- Video streams (out of scope for LoRa)
 
-The IM continuously monitors:
+### Redundancy Strategy
 
-Metric	Description :-
-RSSI	Signal strength of the interface
-Packet Loss Rate	Derived from MAVLink sequence numbers
-HEARTBEAT Timeout	Missed MAVLink HEARTBEAT messages
-Throughput	Estimated data transmission rate
-Switching Logic
+- Critical messages are **duplicated across both Wi-Fi and LoRa**
+- Non-critical messages use the **currently preferred interface only**
 
-Under normal conditions:
+---
 
-Wi-Fi is preferred for telemetry and high-data traffic
+## Deduplication at GCS
 
-When Wi-Fi quality degrades:
+Since critical messages may arrive via both links:
 
-Packet loss increases
-
-HEARTBEATs are missed
-
-RSSI drops below threshold
-→ IM switches primary transmission to LoRa
-
-When Wi-Fi recovers:
-
-IM dynamically reverts to Wi-Fi
-
-Switching is automatic, adaptive, and continuous.
-
-Message Priority and Redundancy
-
-Message Classification :-
-
-Critical Messages :-
-
-C2 commands
-
-HEARTBEAT
-
-Position and health telemetry
-
-Non-Critical Messages :-
-
-Logs
-
-High-rate telemetry
-
-Video streams (out of scope for LoRa)
-
-Redundancy Strategy
-
-Critical messages are duplicated across both Wi-Fi and LoRa
-
-Non-critical messages use the currently preferred interface only
-
-Deduplication at GCS
-
-Since critical messages may arrive twice:
-
-Each MAVLink packet is hashed
-
-Recently received hashes are cached
-
-Duplicate packets are discarded
+- Each MAVLink packet is hashed
+- Recently received hashes are cached
+- Duplicate packets are discarded
 
 This ensures:
+- No repeated command execution
+- Idempotent message processing
+- Maximum delivery reliability
 
-No repeated command execution
+---
 
-Idempotent message processing
+## Implementation Details
 
-Maximum delivery reliability
+### Language & Tools
+- Python 3
+- `pymavlink`
+- Linux networking utilities
+- Mission Planner / QGroundControl
 
-Implementation Details
-Language & Tools
+### Key Modules
+- `interface_manager.py`  
+  Core switching and decision logic
 
-Python 3
+- `metrics_monitor.py`  
+  RSSI, packet loss, and HEARTBEAT tracking
 
-pymavlink
+- `mavlink_router.py`  
+  MAVLink packet handling and routing
 
-Linux networking utilities
+- `link_wifi.py`  
+  Wi-Fi communication abstraction
 
-Mission Planner / QGroundControl
+- `link_lora.py`  
+  LoRa communication abstraction
 
-Key Modules :-
+- `deduplicator.py`  
+  Duplicate packet detection
 
-- interface_manager.py
-Core switching and decision logic
+---
 
-- metrics_monitor.py
-RSSI, packet loss, HEARTBEAT tracking
-
-- mavlink_router.py
-MAVLink packet handling and routing
-
-- link_wifi.py
-Wi-Fi communication abstraction
-
-- link_lora.py
-LoRa communication abstraction
-
-- deduplicator.py
-Duplicate packet detection
-
-Demonstration Methodology :-
+## Demonstration Methodology
 
 The project can be demonstrated using:
 
-SITL or real flight controller
+- SITL or a real flight controller
+- MAVLink telemetry over Wi-Fi
+- Artificial Wi-Fi degradation using Linux `tc`
+- Automatic switch to LoRa
+- Log verification of switching events
+- Continuous reception of critical telemetry
 
-MAVLink telemetry over Wi-Fi
+---
 
-Artificial Wi-Fi degradation using Linux tc
+## Observed Outcomes
 
-Automatic switch to LoRa
+- Seamless switching between Wi-Fi and LoRa
+- No loss of critical MAVLink commands
+- Deterministic failover behavior
+- Improved reliability compared to single-link systems
 
-Log verification of switching events
+---
 
-Continuous reception of critical telemetry
+## Scope and Limitations
 
-Observed Outcomes :-
+- Video streaming over LoRa is **not supported**
+- Encryption and authentication are **out of scope for this PoC**
+- Multi-UAV mesh networking is **future work**
+- Focus is on **command and telemetry reliability**
 
-Seamless switching between Wi-Fi and LoRa
+---
 
-No loss of critical MAVLink commands
+## Future Enhancements
 
-Deterministic failover behavior
+- AI/ML-based predictive link switching
+- Secure MAVLink transport
+- Multi-UAV mesh integration
+- Adaptive telemetry rate control
 
-Improved reliability compared to single-link systems
+---
 
-Scope and Limitations :-
+## Relevance to Capacity Building in UAS
 
--Video streaming over LoRa is not supported
+This project demonstrates:
 
--Encryption/authentication is out of scope for this PoC
+- UAV communication system design
+- Companion computer integration
+- Reliability engineering
+- Real-world network resilience
+- Safety-critical system behavior
 
--Multi-UAV mesh networking is future work
+It is well-suited for **training, evaluation, and applied research** in **Unmanned Aircraft Systems (UAS)**.
 
--Focus is on command and telemetry reliability
+---
 
-Future Enhancements :-
+## References
 
--AI/ML-based predictive link switching
+- MAVLink Documentation: https://mavlink.io  
+- PX4 Companion Computer Architecture  
+- LoRa Alliance Technical Specifications  
+- NS-3 Network Simulator  
+- Research on MAVLink packet duplication and redundancy  
 
--Secure MAVLink transport
+---
 
--Multi-UAV mesh integration
+## Author
 
--Adaptive telemetry rate control
-
--Relevance to Capacity Building in UAS
-
-This Project demonstrates:
-
--UAV communication system design
-
--Companion computer integration
-
--Reliability engineering
-
--Real-world network resilience
-
--Safety-critical system behavior
-
--It is well-suited for training, evaluation, and applied research in UAS technologies.
-
-References :-
-
-MAVLink Documentation: https://mavlink.io
-
-PX4 Companion Computer Architecture
-
-LoRa Alliance Technical Specifications
-
-NS-3 Network Simulator
-
-Research on MAVLink packet duplication and redundancy
-
-Author
-
-Kaushal Nilesh Chaudhari
-Pune Institute of Computer Technology
+**Kaushal Nilesh Chaudhari**  
+Pune Institute of Computer Technology  
 Email: knc262005@gmail.com
