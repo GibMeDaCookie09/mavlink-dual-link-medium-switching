@@ -22,7 +22,7 @@ Loss of control or telemetry can cause mission failure or safety hazards
 
 Most UAV systems rely on one communication medium, making them vulnerable to single-point failures.
 
-Proposed Solution
+Proposed Solution :-
 
 This PoC implements a heterogeneous dual-link communication architecture using:
 
@@ -34,8 +34,9 @@ LoRa for long-range, robust low-bandwidth communication
 
 An Interface Manager (IM) dynamically selects the optimal medium based on real-time link quality metrics and ensures redundancy for critical messages.
 
-System Architecture
-Key Components
+System Architecture :-
+
+Key Components :-
 
 Flight Controller (FC)
 
@@ -69,7 +70,7 @@ Performs deduplication
 
 Displays telemetry and allows command input
 
-Why MAVLink + Dual Links?
+- Why MAVLink + Dual Links?
 
 MAVLink defines how UAV data is structured, sequenced, and verified
 
@@ -79,13 +80,13 @@ MAVLink alone does not guarantee delivery
 
 Dual-link redundancy ensures reliability under unpredictable conditions
 
-Medium Switching Concept
+Medium Switching Concept :-
 
 The core contribution of this PoC is application-layer medium switching.
 
 Instead of relying on network-level failover, the system makes message-aware decisions based on real-time link conditions.
 
-Interface Manager (IM)
+Interface Manager (IM) :-
 
 The Interface Manager is the central logic unit of the PoC.
 
@@ -130,9 +131,10 @@ IM dynamically reverts to Wi-Fi
 Switching is automatic, adaptive, and continuous.
 
 Message Priority and Redundancy
-Message Classification
 
-Critical Messages
+Message Classification :-
+
+Critical Messages :-
 
 C2 commands
 
@@ -140,7 +142,7 @@ HEARTBEAT
 
 Position and health telemetry
 
-Non-Critical Messages
+Non-Critical Messages :-
 
 Logs
 
@@ -183,29 +185,29 @@ Linux networking utilities
 
 Mission Planner / QGroundControl
 
-Key Modules
+Key Modules :-
 
-interface_manager.py
+- interface_manager.py
 Core switching and decision logic
 
-metrics_monitor.py
+- metrics_monitor.py
 RSSI, packet loss, HEARTBEAT tracking
 
-mavlink_router.py
+- mavlink_router.py
 MAVLink packet handling and routing
 
-link_wifi.py
+- link_wifi.py
 Wi-Fi communication abstraction
 
-link_lora.py
+- link_lora.py
 LoRa communication abstraction
 
-deduplicator.py
+- deduplicator.py
 Duplicate packet detection
 
-Demonstration Methodology
+Demonstration Methodology :-
 
-The PoC can be demonstrated using:
+The project can be demonstrated using:
 
 SITL or real flight controller
 
@@ -219,7 +221,7 @@ Log verification of switching events
 
 Continuous reception of critical telemetry
 
-Observed Outcomes (PoC-Level)
+Observed Outcomes :-
 
 Seamless switching between Wi-Fi and LoRa
 
@@ -229,41 +231,41 @@ Deterministic failover behavior
 
 Improved reliability compared to single-link systems
 
-Scope and Limitations
+Scope and Limitations :-
 
-Video streaming over LoRa is not supported
+-Video streaming over LoRa is not supported
 
-Encryption/authentication is out of scope for this PoC
+-Encryption/authentication is out of scope for this PoC
 
-Multi-UAV mesh networking is future work
+-Multi-UAV mesh networking is future work
 
-Focus is on command and telemetry reliability
+-Focus is on command and telemetry reliability
 
-Future Enhancements
+Future Enhancements :-
 
-AI/ML-based predictive link switching
+-AI/ML-based predictive link switching
 
-Secure MAVLink transport
+-Secure MAVLink transport
 
-Multi-UAV mesh integration
+-Multi-UAV mesh integration
 
-Adaptive telemetry rate control
+-Adaptive telemetry rate control
 
-Relevance to Capacity Building in UAS
+-Relevance to Capacity Building in UAS
 
 This Project demonstrates:
 
-UAV communication system design
+-UAV communication system design
 
-Companion computer integration
+-Companion computer integration
 
-Reliability engineering
+-Reliability engineering
 
-Real-world network resilience
+-Real-world network resilience
 
-Safety-critical system behavior
+-Safety-critical system behavior
 
-It is well-suited for training, evaluation, and applied research in UAS technologies.
+-It is well-suited for training, evaluation, and applied research in UAS technologies.
 
 References :-
 
